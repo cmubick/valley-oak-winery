@@ -1,24 +1,133 @@
+# Winery Website
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+A modern winery website with wine catalog management, admin authentication, and AWS integration.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 18+
+- Docker and Docker Compose
+- AWS CLI (for LocalStack setup)
+
+## Local Development Setup
+
+This project uses LocalStack to simulate AWS services (DynamoDB, S3) for local development.
+
+### 1. Install Dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The `.env.local` file is already configured for LocalStack development with these settings:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NODE_ENV=development
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+DYNAMODB_WINES_TABLE=winery-wines
+DYNAMODB_USERS_TABLE=winery-users
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key-here
+```
+
+### 3. Start Development Environment
+
+#### Option A: One-command setup (recommended)
+
+```bash
+npm run dev:local
+```
+
+This will:
+
+- Start LocalStack (DynamoDB + S3)
+- Create required database tables
+- Start the Next.js development server
+
+#### Option B: Step-by-step setup
+
+```bash
+# Start LocalStack
+npm run localstack:start
+
+# Wait a few seconds, then setup tables
+npm run localstack:setup
+
+# Start Next.js development server
+npm run dev
+```
+
+### 4. Create Admin User
+
+Use Postman or curl to create an admin user:
+
+```bash
+curl -X POST http://localhost:3000/api/admin \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "yourpassword"}'
+```
+
+### 5. Access the Application
+
+- **Main Site**: [http://localhost:3000](http://localhost:3000)
+- **Admin Login**: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
+- **Admin Dashboard**: [http://localhost:3000/admin](http://localhost:3000/admin) (after login)
+
+### 6. Stop Development Environment
+
+```bash
+npm run localstack:stop
+```
+
+## Available Scripts
+
+- `npm run dev` - Start Next.js development server only
+- `npm run dev:local` - Start LocalStack + setup tables + Next.js dev server
+- `npm run localstack:start` - Start LocalStack services
+- `npm run localstack:stop` - Stop LocalStack services  
+- `npm run localstack:setup` - Create DynamoDB tables and S3 buckets
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Project Structure
+
+```text
+src/
+├── app/
+│   ├── api/
+│   │   ├── admin/          # Admin user management
+│   │   ├── auth/           # NextAuth authentication
+│   │   └── wines/          # Wine CRUD operations
+│   ├── admin/              # Admin dashboard pages
+│   └── components/         # Reusable React components
+├── lib/
+│   └── dynamodb.ts         # DynamoDB client configuration
+```
+
+## Features
+
+- 🍷 Wine catalog with CRUD operations
+- 🔐 Admin authentication with NextAuth
+- 🏗️ LocalStack for local AWS services
+- 📱 Responsive design with Tailwind CSS
+- 🚀 TypeScript throughout
+- 🐳 Docker containerization
+
+## Production Deployment
+
+For production deployment, update your `.env.local` with real AWS credentials and deploy using:
+
+```bash
+npm run tf:init
+npm run tf:plan
+npm run tf:apply
+```
 
 ## Learn More
 

@@ -1,7 +1,11 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: ['your-s3-bucket.s3.amazonaws.com'],
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb'],
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
