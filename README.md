@@ -226,7 +226,22 @@ npm run tf:plan
 npm run tf:apply
 ```
 
-## Learn More
+## 🔧 Development Notes
+
+### Build Artifacts
+
+The following files are generated during the build process and are **not tracked in git**:
+
+- **Lambda zip files** (`terraform/*.zip`) - Created by `npm run lambda:build`
+- **Terraform state** (`terraform/terraform.tfstate*`) - Managed by Terraform
+- **Terraform providers** (`terraform/.terraform/`) - Downloaded during `terraform init`
+- **Environment variables** (`terraform/terraform.tfvars`) - Contains secrets
+
+These files are regenerated automatically during deployment and should never be committed to version control.
+
+---
+
+## 🚀 Deployment
 
 To learn more about Next.js, take a look at the following resources:
 
