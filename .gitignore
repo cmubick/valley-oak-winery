@@ -41,3 +41,17 @@ yarn-error.log*
 next-env.d.ts
 
 /lambda/node_modules
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.zip
+terraform/terraform.tfvars
+
+# Lambda build artifacts
+*.zip
+
+# Docker and LocalStack
+volume/
