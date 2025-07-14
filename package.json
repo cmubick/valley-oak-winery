@@ -13,6 +13,8 @@
     "dev:local": "npm run localstack:start && sleep 5 && npm run localstack:setup && npm run dev",
     "lambda:build": "./scripts/build-lambda.sh",
     "lambda:deploy": "npm run lambda:build && cd terraform && terraform apply",
+    "website:deploy": "./scripts/deploy-website.sh",
+    "deploy:all": "npm run lambda:deploy && npm run website:deploy",
     "tf:init": "cd terraform && terraform init",
     "tf:plan": "cd terraform && terraform plan",
     "tf:apply": "cd terraform && terraform apply"

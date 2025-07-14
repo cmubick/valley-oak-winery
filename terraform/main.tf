@@ -3,6 +3,12 @@ provider "aws" {
   region = "us-west-2"
 }
 
+# Provider for ACM certificates (must be in us-east-1 for CloudFront)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 # IAM Role for Lambda Functions
 resource "aws_iam_role" "lambda_role" {
   name = "winery-lambda-role"
@@ -373,10 +379,266 @@ variable "nextauth_secret" {
   sensitive   = true
 }
 
+variable "domain_name" {
+  description = "Domain name for the website"
+  type        = string
+  default     = "valleyoakwinery.chrisubick.io"
+}
+
+# Route 53 Hosted Zone
+resource "aws_route53_zone" "main" {
+  name = var.domain_name
+
+  tags = {
+    Name = "Valley Oak Winery Domain"
+  }
+}
+
+# ACM Certificate for HTTPS (must be in us-east-1 for CloudFront)
+resource "aws_acm_certificate" "main" {
+  provider          = aws.us_east_1
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  subject_alternative_names = [
+    "www.${var.domain_name}"
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "Valley Oak Winery Certificate"
+  }
+}
+
+# Route 53 record for ACM certificate validation
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = aws_route53_zone.main.zone_id
+}
+
+# ACM certificate validation
+resource "aws_acm_certificate_validation" "main" {
+  provider                = aws.us_east_1
+  certificate_arn         = aws_acm_certificate.main.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+}
+
+# S3 bucket for static website hosting
+resource "aws_s3_bucket" "website" {
+  bucket = "${replace(var.domain_name, ".", "-")}-website"
+}
+
+resource "aws_s3_bucket_website_configuration" "website" {
+  bucket = aws_s3_bucket.website.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "website" {
+  bucket = aws_s3_bucket.website.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_policy" "website" {
+  bucket = aws_s3_bucket.website.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.website.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.website]
+}
+
+# CloudFront Origin Access Control
+resource "aws_cloudfront_origin_access_control" "main" {
+  name                              = "${var.domain_name}-oac"
+  description                       = "OAC for ${var.domain_name}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+# CloudFront Distribution
+resource "aws_cloudfront_distribution" "main" {
+  origin {
+    domain_name              = aws_s3_bucket.website.bucket_regional_domain_name
+    origin_access_control_id = aws_cloudfront_origin_access_control.main.id
+    origin_id                = "S3-${aws_s3_bucket.website.bucket}"
+  }
+
+  # API Gateway origin for API calls
+  origin {
+    domain_name = replace(aws_api_gateway_stage.winery_api_stage.invoke_url, "https://", "")
+    origin_id   = "APIGateway-${aws_api_gateway_rest_api.winery_api.name}"
+    origin_path = "/prod"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  enabled             = true
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
+  comment             = "Valley Oak Winery CloudFront Distribution"
+
+  aliases = [var.domain_name, "www.${var.domain_name}"]
+
+  # Default behavior for static website
+  default_cache_behavior {
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.website.bucket}"
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
+  }
+
+  # API behavior for /api/* paths
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id = "APIGateway-${aws_api_gateway_rest_api.winery_api.name}"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+  }
+
+  price_class = "PriceClass_100"
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = aws_acm_certificate_validation.main.certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  tags = {
+    Name = "Valley Oak Winery CloudFront"
+  }
+}
+
+# Route 53 records pointing to CloudFront
+resource "aws_route53_record" "main" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.main.domain_name
+    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "www.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.main.domain_name
+    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 # Outputs
 output "api_gateway_url" {
   description = "URL of the API Gateway"
   value       = aws_api_gateway_stage.winery_api_stage.invoke_url
+}
+
+output "website_url" {
+  description = "Website URL"
+  value       = "https://${var.domain_name}"
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront Distribution ID"
+  value       = aws_cloudfront_distribution.main.id
+}
+
+output "cloudfront_domain_name" {
+  description = "CloudFront Distribution Domain Name"
+  value       = aws_cloudfront_distribution.main.domain_name
+}
+
+output "route53_zone_id" {
+  description = "Route 53 Hosted Zone ID"
+  value       = aws_route53_zone.main.zone_id
+}
+
+output "route53_name_servers" {
+  description = "Route 53 Name Servers (configure these with your domain registrar)"
+  value       = aws_route53_zone.main.name_servers
+}
+
+output "s3_website_bucket" {
+  description = "S3 bucket for website hosting"
+  value       = aws_s3_bucket.website.bucket
 }
 
 output "s3_bucket_name" {

@@ -180,7 +180,33 @@ npm run tf:plan
 npm run tf:apply
 ```
 
-#### Step 4: One-Command Deploy (after initial setup)
+#### Step 4: Configure Domain DNS
+
+After deployment, you'll get Route 53 name servers in the output. Configure your domain registrar to use these name servers:
+
+```bash
+# The terraform apply output will show:
+route53_name_servers = [
+  "ns-1234.awsdns-12.com",
+  "ns-5678.awsdns-34.net",
+  "ns-9012.awsdns-56.org", 
+  "ns-3456.awsdns-78.co.uk"
+]
+```
+
+**Configure your domain registrar** (where you bought `chrisubick.io`) to use these name servers for the subdomain `valleyoakwinery.chrisubick.io`.
+
+#### Step 5: Deploy Website Content
+
+```bash
+# Build the Next.js application for production
+npm run build
+
+# Deploy static files to S3 (you'll need to sync the .next/export to S3)
+# This step will be automated in future versions
+```
+
+#### Step 6: One-Command Deploy (after initial setup)
 
 ```bash
 # Build Lambda functions and deploy in one command
@@ -192,20 +218,31 @@ npm run lambda:deploy
 - **3 Lambda Functions** for API endpoints
 - **API Gateway** with RESTful routing
 - **DynamoDB Tables** for wines and users
-- **S3 Bucket** for wine images
+- **S3 Buckets** for wine images and website hosting
+- **CloudFront Distribution** with custom domain and HTTPS
+- **Route 53 Hosted Zone** for DNS management
+- **ACM Certificate** for HTTPS encryption
 - **IAM Roles** with proper permissions
 - **CloudWatch Logs** for monitoring
 
-#### API Endpoints (after deployment)
+#### Deployment URLs
 
-Your API will be available at: `https://{api-id}.execute-api.us-west-2.amazonaws.com/prod/`
+After successful deployment, your application will be available at:
 
-- `GET /wines` - List all wines
-- `POST /wines` - Create new wine (requires admin auth)
-- `GET /wines/{id}` - Get specific wine
-- `PUT /wines/{id}` - Update wine (requires admin auth)
-- `DELETE /wines/{id}` - Delete wine (requires admin auth)
-- `POST /admin` - Create admin user
+- **Website**: <https://valleyoakwinery.chrisubick.io>
+- **API Gateway**: `https://{api-id}.execute-api.us-west-2.amazonaws.com/prod/`
+- **CloudFront**: `https://{distribution-id}.cloudfront.net`
+
+#### API Endpoints
+
+Your API will be available at: `https://valleyoakwinery.chrisubick.io/api/`
+
+- `GET /api/wines` - List all wines
+- `POST /api/wines` - Create new wine (requires admin auth)
+- `GET /api/wines/{id}` - Get specific wine
+- `PUT /api/wines/{id}` - Update wine (requires admin auth)
+- `DELETE /api/wines/{id}` - Delete wine (requires admin auth)
+- `POST /api/admin` - Create admin user
 
 #### Cleanup
 
