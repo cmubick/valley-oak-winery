@@ -91,9 +91,14 @@ npm run localstack:stop
 - `npm run localstack:start` - Start LocalStack services
 - `npm run localstack:stop` - Stop LocalStack services  
 - `npm run localstack:setup` - Create DynamoDB tables and S3 buckets
+- `npm run lambda:build` - Build and package Lambda functions for deployment
+- `npm run lambda:deploy` - Build Lambda functions and deploy to AWS
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run tf:init` - Initialize Terraform
+- `npm run tf:plan` - Plan Terraform deployment
+- `npm run tf:apply` - Apply Terraform changes
 
 ## Project Structure
 
@@ -115,13 +120,105 @@ src/
 - 🍷 Wine catalog with CRUD operations
 - 🔐 Admin authentication with NextAuth
 - 🏗️ LocalStack for local AWS services
+- ☁️ Serverless deployment with AWS Lambda
+- 🌐 API Gateway for RESTful endpoints
 - 📱 Responsive design with Tailwind CSS
 - 🚀 TypeScript throughout
 - 🐳 Docker containerization
 
 ## Production Deployment
 
-For production deployment, update your `.env.local` with real AWS credentials and deploy using:
+### Lambda & AWS Infrastructure
+
+This project can be deployed to AWS using Lambda functions and API Gateway for a serverless architecture.
+
+#### Prerequisites for Production Deployment
+
+- AWS CLI configured with appropriate credentials
+- Terraform installed
+- Node.js 18+ for building Lambda functions
+
+#### Step 1: Configure Terraform Variables
+
+```bash
+# Copy the example file
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars
+
+# Edit the file and set your values
+# Required: nextauth_secret (make it long and random)
+```
+
+Example `terraform/terraform.tfvars`:
+
+```bash
+nextauth_secret = "your-very-long-random-secret-key-here-at-least-32-characters"
+```
+
+#### Step 2: Build Lambda Functions
+
+```bash
+# Build and package all Lambda functions
+npm run lambda:build
+```
+
+This creates deployment packages:
+
+- `terraform/wines-api.zip` - Wine catalog API
+- `terraform/admin-api.zip` - Admin user management
+- `terraform/auth-api.zip` - Authentication API
+
+#### Step 3: Deploy Infrastructure
+
+```bash
+# Initialize Terraform (first time only)
+npm run tf:init
+
+# Review deployment plan
+npm run tf:plan
+
+# Deploy to AWS
+npm run tf:apply
+```
+
+#### Step 4: One-Command Deploy (after initial setup)
+
+```bash
+# Build Lambda functions and deploy in one command
+npm run lambda:deploy
+```
+
+#### Infrastructure Created
+
+- **3 Lambda Functions** for API endpoints
+- **API Gateway** with RESTful routing
+- **DynamoDB Tables** for wines and users
+- **S3 Bucket** for wine images
+- **IAM Roles** with proper permissions
+- **CloudWatch Logs** for monitoring
+
+#### API Endpoints (after deployment)
+
+Your API will be available at: `https://{api-id}.execute-api.us-west-2.amazonaws.com/prod/`
+
+- `GET /wines` - List all wines
+- `POST /wines` - Create new wine (requires admin auth)
+- `GET /wines/{id}` - Get specific wine
+- `PUT /wines/{id}` - Update wine (requires admin auth)
+- `DELETE /wines/{id}` - Delete wine (requires admin auth)
+- `POST /admin` - Create admin user
+
+#### Cleanup
+
+To destroy all AWS resources:
+
+```bash
+cd terraform
+terraform destroy
+```
+
+### Legacy Deployment Options
+
+For production deployment with traditional infrastructure, update your `.env.local` with real AWS credentials and deploy using:
 
 ```bash
 npm run tf:init

@@ -11,6 +11,8 @@
     "localstack:stop": "docker-compose down",
     "localstack:setup": "./scripts/setup-localstack.sh",
     "dev:local": "npm run localstack:start && sleep 5 && npm run localstack:setup && npm run dev",
+    "lambda:build": "./scripts/build-lambda.sh",
+    "lambda:deploy": "npm run lambda:build && cd terraform && terraform apply",
     "tf:init": "cd terraform && terraform init",
     "tf:plan": "cd terraform && terraform plan",
     "tf:apply": "cd terraform && terraform apply"
