@@ -1,7 +1,7 @@
 // components/AdminWineList.tsx
 'use client';
 
-import { Wine } from '@/lib/dynamodb';
+import { Wine, collectionTitle, formatPrice, styleTitle, wineTitle } from '@/lib/wines';
 import { Edit, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -67,10 +67,10 @@ export default function AdminWineList({ wines, onEdit, onDelete }: AdminWineList
                       {wine.imageUrl ? (
                         <Image
                           src={wine.imageUrl}
-                          alt={wine.name}
+                          alt={wineTitle(wine)}
                           width={64}
                           height={64}
-                          className="h-16 w-16 rounded-lg object-cover"
+                          className="h-16 w-16 rounded-lg object-contain"
                         />
                       ) : (
                         <div className="h-16 w-16 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -80,21 +80,21 @@ export default function AdminWineList({ wines, onEdit, onDelete }: AdminWineList
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {wine.name}
+                        {wineTitle(wine)}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {wine.vintage}
+                        {wine.award}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{wine.varietal}</div>
-                  <div className="text-sm text-gray-500">{wine.region}</div>
+                  <div className="text-sm text-gray-900">{collectionTitle(wine.collection)}</div>
+                  <div className="text-sm text-gray-500">{styleTitle(wine.style)} · order {wine.sortOrder}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    ${wine.price.toFixed(2)}
+                    {formatPrice(wine.price)}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

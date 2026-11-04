@@ -20,7 +20,7 @@ Requirements: Node 22 (`nvm use`) and Docker.
 ```bash
 npm install
 cp .env.example .env.local
-npm run dev:local                                    # starts LocalStack, creates tables/bucket, runs next dev
+npm run dev:local                                    # starts LocalStack, creates tables/bucket, seeds wines, runs next dev
 npm run create-admin -- you@example.com 'password'   # first time only, in another terminal
 ```
 
@@ -51,6 +51,10 @@ npm run create-admin -- you@example.com 'password' --prod   # uses your AWS CLI 
 
 Once logged in, an admin can create other users via `POST /api/admin`.
 
+### Wine list
+
+`scripts/wines-seed.json` holds the wine list from the original valleyoakwinery.com site. `npm run seed-wines` loads it into LocalStack (it runs automatically as part of `dev:local` and skips if wines already exist). `npm run seed-wines -- --prod` loads it into production. Add `--force` to write even when the table isn't empty. Seed wines have fixed ids, so this resets those wines to the seed values without creating duplicates.
+
 ## Scripts
 
 | Command | What it does |
@@ -58,5 +62,6 @@ Once logged in, an admin can create other users via `POST /api/admin`.
 | `npm run dev:local` | LocalStack + table setup + dev server |
 | `npm run dev` | Dev server only (LocalStack must already be running) |
 | `npm run create-admin -- <email> <pw> [--prod]` | Create or reset an admin user |
+| `npm run seed-wines -- [--prod] [--force]` | Load the original site's wine list |
 | `npm run build` / `npm start` | Production build / serve it locally |
 | `npm run tf:plan` / `npm run tf:apply` | Preview / apply infrastructure changes |

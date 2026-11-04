@@ -1,0 +1,272 @@
+[
+  {
+    "name": "Sangiovese",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 29,
+    "description": "Cherry bouquet plus Dried Fruit & light peppery finish.",
+    "inStock": true,
+    "sortOrder": 10,
+    "vintage": 2019,
+    "award": "Bronze Medal – San Joaquin"
+  },
+  {
+    "name": "Sangiovese",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 30,
+    "description": "Delightfully smooth with Cherry & Spice.",
+    "inStock": true,
+    "sortOrder": 20,
+    "vintage": 2021,
+    "award": "Bronze Medal – CA State Fair"
+  },
+  {
+    "name": "Sangiovese",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 35,
+    "description": "Berry & Spice aromas with Cherry, Dried Fruit & Clove flavors & smooth finish.",
+    "inStock": true,
+    "sortOrder": 30,
+    "vintage": 2022,
+    "award": "Bronze Medal – CA State Fair"
+  },
+  {
+    "name": "Merlot",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 28,
+    "description": "Fresh & Dried Plum & Cherry with smooth light pepper finish.",
+    "inStock": true,
+    "sortOrder": 40,
+    "vintage": 2021
+  },
+  {
+    "name": "Merlot",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 35,
+    "description": "Caramel, Strawberry & Fruit cake nose with Berries, Ginger, Lemon Jam & Dried Fruit flavors. Velvety dry spice finish.",
+    "inStock": true,
+    "sortOrder": 50,
+    "vintage": 2022,
+    "award": "Bronze Medal – CA State Fair"
+  },
+  {
+    "name": "Barbera",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 28,
+    "description": "Nice legs with Dark Cherry, Blackberry & Strawberry flavors & a gentle pepper finish.",
+    "inStock": true,
+    "sortOrder": 60,
+    "vintage": 2019
+  },
+  {
+    "name": "Barbera",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 30,
+    "description": "Berry & Red Tart Cherry and smooth light Spice.",
+    "inStock": true,
+    "sortOrder": 70,
+    "vintage": 2021
+  },
+  {
+    "name": "Barbera",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 35,
+    "description": "Bing Cherry & Raisin aroma with Coffee, Dried Fruit, Oak, Molasses & Jam flavors with spicy Jammy finish.",
+    "inStock": true,
+    "sortOrder": 80,
+    "vintage": 2022
+  },
+  {
+    "name": "Cabernet Sauvignon",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 30,
+    "description": "Cherry, Strawberry, Ripe & Dried Fruit with mild spice & pepper.",
+    "inStock": true,
+    "sortOrder": 90,
+    "vintage": 2021
+  },
+  {
+    "name": "Cabernet Sauvignon",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 40,
+    "description": "Smoky Strawberry & Peach nose with Anise, Dried Fruit, Tobacco, Berry & smooth spice.",
+    "inStock": true,
+    "sortOrder": 100,
+    "vintage": 2022,
+    "award": "Bronze Medal – CA State Fair"
+  },
+  {
+    "name": "Zinfandel",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 27,
+    "description": "Blackberry, Cherry, Strawberry, Tree Fruit, Raisin & Dried Plum with Spice & Dried Fruit finish.",
+    "inStock": true,
+    "sortOrder": 110,
+    "vintage": 2019,
+    "award": "Bronze Medal – CA State Fair"
+  },
+  {
+    "name": "Zinfandel",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 29,
+    "description": "Earthy, Smoky Prune, Fig & Raspberry.",
+    "inStock": true,
+    "sortOrder": 120,
+    "vintage": 2021
+  },
+  {
+    "name": "Zinfandel",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 40,
+    "description": "Bold Strawberry, Butterscotch, Tobacco, Dried Fruit aromas & Spicy Currant, Chocolate, Cherry Cola with honey & pepper finish.",
+    "inStock": true,
+    "sortOrder": 130,
+    "vintage": 2022
+  },
+  {
+    "name": "Syrah",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 33,
+    "description": "Rich Cherry, Blackberry, Fig, Dried Plum & super ripe fruit with a spicy finish.",
+    "inStock": true,
+    "sortOrder": 140,
+    "vintage": 2019,
+    "award": "Silver Medal – CA State Fair & San Joaquin"
+  },
+  {
+    "name": "Syrah",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 38,
+    "description": "Complex Fig, Dried Plum, Raisin, Black Currant with spice & pepper finish.",
+    "inStock": true,
+    "sortOrder": 150,
+    "vintage": 2021
+  },
+  {
+    "name": "Syrah",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 40,
+    "description": "Earthy & Woodsy Dark Berry & Cherry, Tobacco, Dried Fruit & Chocolate with spicy dry finish.",
+    "inStock": true,
+    "sortOrder": 160,
+    "vintage": 2022
+  },
+  {
+    "name": "Petite Sirah",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 32,
+    "description": "Dark Cherry & Prune nose leading to fully ripe Cherry, Fig, Prune & Blackberry flavors with pepper on the finish.",
+    "inStock": true,
+    "sortOrder": 170,
+    "vintage": 2019
+  },
+  {
+    "name": "Petite Sirah",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 40,
+    "description": "Blackberry, Strawberry, Raspberry & Dried Fruit with smooth mild pepper finish.",
+    "inStock": true,
+    "sortOrder": 180,
+    "vintage": 2021,
+    "award": "Silver Medal – CA State Fair"
+  },
+  {
+    "name": "Petite Sirah",
+    "collection": "ubick-reserve",
+    "style": "red",
+    "price": 45,
+    "description": "Blackberry, Strawberry, Raspberry & Dried Fruit with smooth mild pepper finish.",
+    "inStock": true,
+    "sortOrder": 190,
+    "vintage": 2022,
+    "award": "Silver Medal – CA State Fair"
+  },
+  {
+    "name": "Sauvignon Blanc",
+    "collection": "valley-oak",
+    "style": "white-blush",
+    "price": 25,
+    "description": "Clear & bright with a nose of Citrus Florals & crisp Green Apple & Grapefruit flavors.",
+    "inStock": true,
+    "sortOrder": 10,
+    "vintage": 2025
+  },
+  {
+    "name": "Rosé",
+    "collection": "valley-oak",
+    "style": "white-blush",
+    "price": 25,
+    "description": "Bright & translucent with Grapefruit & Floral aromas and flavors of Grapefruit, Peach & Strawberry.",
+    "inStock": true,
+    "sortOrder": 20,
+    "vintage": 2025
+  },
+  {
+    "name": "Nebula",
+    "collection": "valley-oak",
+    "style": "red",
+    "price": 25,
+    "description": "A smooth blend of our own Barbera, Syrah & Zinfandel has Cherry & Blackberry with a lingering peppery finish.",
+    "inStock": true,
+    "sortOrder": 10,
+    "vintage": 2021,
+    "award": "Bronze Medal – CA State Fair"
+  },
+  {
+    "name": "Cosmos",
+    "collection": "valley-oak",
+    "style": "red",
+    "price": 25,
+    "description": "Our own Petite Sirah, Sangiovese & Zinfandel blend has Sweet Cherry & Berry aromas & flavors with a dry hint-of-spice finish.",
+    "inStock": true,
+    "sortOrder": 20,
+    "vintage": 2019,
+    "award": "Bronze Medal – San Joaquin"
+  },
+  {
+    "name": "Zinfandel",
+    "collection": "valley-oak",
+    "style": "red",
+    "price": 22,
+    "description": "Rustic brick color with Red Berry & Black Pepper aromas, flavors of Light Cherry & Berry with a delicate spice finish.",
+    "inStock": true,
+    "sortOrder": 30,
+    "vintage": 2017
+  },
+  {
+    "name": "Symphony",
+    "collection": "valley-oak",
+    "style": "dessert",
+    "price": 22,
+    "description": "An enticing delight of Citrusy Green Apple & Muscat aromas with ripe Tropical fruit, Melon & Citrus flavors. An amazing sweet, light nectar!",
+    "inStock": true,
+    "sortOrder": 10,
+    "vintage": 2022
+  },
+  {
+    "name": "Gold Dust",
+    "collection": "valley-oak",
+    "style": "dessert",
+    "price": 17,
+    "description": "Delightful & slightly decadent, topaz color wine smoothly mingles flavors of Dried Fruits, Caramel, Honey, Maple, Tea, Strawberry jam, Cocoa & more.",
+    "inStock": true,
+    "sortOrder": 20
+  }
+]

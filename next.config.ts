@@ -9,6 +9,10 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
+  // "/" is Our Story now (as on the original site); keep the old URL working.
+  async redirects() {
+    return [{ source: '/our-story', destination: '/', permanent: true }];
+  },
 };
 
 module.exports = nextConfig;

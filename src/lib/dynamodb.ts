@@ -17,20 +17,7 @@ const client = new DynamoDBClient(awsConfig);
 
 export const dynamodb = DynamoDBDocumentClient.from(client);
 
-export interface Wine {
-  id: string;
-  name: string;
-  vintage: number;
-  varietal: string;
-  region: string;
-  price: number;
-  description: string;
-  tastingNotes: string;
-  imageUrl?: string;
-  inStock: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { Wine } from './wines';
 
 export interface User {
   email: string;

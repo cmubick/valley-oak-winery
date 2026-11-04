@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Wine } from '@/lib/dynamodb';
+import { Wine, WineInput } from '@/lib/wines';
 import WineForm from '@/components/WineForm';
 import AdminWineList from '@/components/AdminWineList';
 
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleWineSubmit = async (wineData: Partial<Wine>) => {
+  const handleWineSubmit = async (wineData: WineInput) => {
     try {
       const url = editingWine ? `/api/wines/${editingWine.id}` : '/api/wines';
       const method = editingWine ? 'PUT' : 'POST';
@@ -48,13 +48,15 @@ export default function AdminDashboard() {
         body: JSON.stringify(wineData),
       });
 
-      if (res.ok) {
-        await fetchWines();
-        setShowForm(false);
-        setEditingWine(null);
+      if (!res.ok) {
+        throw new Error(`Save failed (${res.status})`);
       }
+      await fetchWines();
+      setShowForm(false);
+      setEditingWine(null);
     } catch (error) {
       console.error('Error saving wine:', error);
+      throw error;
     }
   };
 
@@ -99,6 +101,7 @@ export default function AdminDashboard() {
         {showForm && (
           <WineForm
             wine={editingWine}
+            nextSortOrder={wines.reduce((max, w) => Math.max(max, w.sortOrder), 0) + 10}
             onSubmit={handleWineSubmit}
             onCancel={() => {
               setShowForm(false);
