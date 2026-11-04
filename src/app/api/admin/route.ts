@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { dynamodb } from '@/lib/dynamodb';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import bcrypt from 'bcryptjs';
+import { requireAdmin } from '@/lib/auth';
 
+// Only an existing admin can create users. Bootstrap the first admin with
+// `npm run create-admin` (see README).
 export async function POST(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     const { email, password, role = 'admin' } = await request.json();
 

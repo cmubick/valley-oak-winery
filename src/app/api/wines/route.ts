@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dynamodb } from '@/lib/dynamodb';
 import { ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {

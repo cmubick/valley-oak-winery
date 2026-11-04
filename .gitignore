@@ -56,3 +56,4 @@ terraform/terraform.tfvars
 
 # Docker and LocalStack
 volume/
+!.env.example

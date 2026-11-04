@@ -1,14 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb'],
-  },
-  // Enable static export for CloudFront/S3 hosting
-  output: 'export',
-  trailingSlash: true,
-  // Configure images for static export
+  serverExternalPackages: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb'],
   images: {
-    domains: ['your-s3-bucket.s3.amazonaws.com'],
+    // Wine photos come straight from S3 (prod) or LocalStack (dev)
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.s3.us-west-2.amazonaws.com' },
+      { protocol: 'http', hostname: 'localhost', port: '4566' },
+    ],
     unoptimized: true,
   },
 };

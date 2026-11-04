@@ -1,294 +1,62 @@
-# Winery Website
+# Valley Oak Winery
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Website for Valley Oak Winery: a public wine catalog plus an admin area for managing wines and photos.
 
-A modern winery website with wine catalog management, admin authentication, and AWS integration.
+**Live:** <https://valleyoakwinery.chrisubick.io>
 
-## Prerequisites
+## How it fits together
 
-- Node.js 18+
-- Docker and Docker Compose
-- AWS CLI (for LocalStack setup)
+- **Next.js 15 app** (`src/app`). It serves the pages and the API routes (`src/app/api`).
+- **DynamoDB** stores wines (`winery-wines`) and admin users (`winery-users`).
+- **S3** stores wine photos. The browser uploads them directly using a presigned URL from `/api/upload-url`.
+- **NextAuth** handles admin login (email/password checked against `winery-users`).
+- **Locally**, LocalStack (Docker) stands in for DynamoDB and S3.
+- **In production**, AWS Amplify Hosting runs the app and talks to the real DynamoDB and S3 in `us-west-2`.
 
-## Local Development Setup
+## Run locally
 
-This project uses LocalStack to simulate AWS services (DynamoDB, S3) for local development.
-
-### 1. Install Dependencies
+Requirements: Node 22 (`nvm use`) and Docker.
 
 ```bash
 npm install
+cp .env.example .env.local
+npm run dev:local                                    # starts LocalStack, creates tables/bucket, runs next dev
+npm run create-admin -- you@example.com 'password'   # first time only, in another terminal
 ```
 
-### 2. Environment Setup
+- Site: <http://localhost:3000>
+- Admin: <http://localhost:3000/admin/login>
 
-The `.env.local` file is already configured for LocalStack development with these settings:
+`npm run localstack:stop` shuts LocalStack down. Data doesn't survive a LocalStack restart, so you'll need to re-run `create-admin` afterwards.
+
+## Deploy
+
+Pushing to `main` deploys. Amplify builds and releases automatically in about 3–5 minutes. Check progress in the AWS console under Amplify → valley-oak-winery.
+
+### Infrastructure changes
+
+Everything is defined in `terraform/main.tf`. Terraform state is local (`terraform/terraform.tfstate`, gitignored), so infra changes have to be run from this machine.
 
 ```bash
-NODE_ENV=development
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
-DYNAMODB_WINES_TABLE=winery-wines
-DYNAMODB_USERS_TABLE=winery-users
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key-here
-```
-
-### 3. Start Development Environment
-
-#### Option A: One-command setup (recommended)
-
-```bash
-npm run dev:local
-```
-
-This will:
-
-- Start LocalStack (DynamoDB + S3)
-- Create required database tables
-- Start the Next.js development server
-
-#### Option B: Step-by-step setup
-
-```bash
-# Start LocalStack
-npm run localstack:start
-
-# Wait a few seconds, then setup tables
-npm run localstack:setup
-
-# Start Next.js development server
-npm run dev
-```
-
-### 4. Create Admin User
-
-Use Postman or curl to create an admin user:
-
-```bash
-curl -X POST http://localhost:3000/api/admin \
-  -H "Content-Type: application/json" \
-  -d '{"email": "admin@example.com", "password": "yourpassword"}'
-```
-
-### 5. Access the Application
-
-- **Main Site**: [http://localhost:3000](http://localhost:3000)
-- **Admin Login**: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
-- **Admin Dashboard**: [http://localhost:3000/admin](http://localhost:3000/admin) (after login)
-
-### 6. Stop Development Environment
-
-```bash
-npm run localstack:stop
-```
-
-## Available Scripts
-
-- `npm run dev` - Start Next.js development server only
-- `npm run dev:local` - Start LocalStack + setup tables + Next.js dev server
-- `npm run localstack:start` - Start LocalStack services
-- `npm run localstack:stop` - Stop LocalStack services  
-- `npm run localstack:setup` - Create DynamoDB tables and S3 buckets
-- `npm run lambda:build` - Build and package Lambda functions for deployment
-- `npm run lambda:deploy` - Build Lambda functions and deploy to AWS
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run tf:init` - Initialize Terraform
-- `npm run tf:plan` - Plan Terraform deployment
-- `npm run tf:apply` - Apply Terraform changes
-
-## Project Structure
-
-```text
-src/
-├── app/
-│   ├── api/
-│   │   ├── admin/          # Admin user management
-│   │   ├── auth/           # NextAuth authentication
-│   │   └── wines/          # Wine CRUD operations
-│   ├── admin/              # Admin dashboard pages
-│   └── components/         # Reusable React components
-├── lib/
-│   └── dynamodb.ts         # DynamoDB client configuration
-```
-
-## Features
-
-- 🍷 Wine catalog with CRUD operations
-- 🔐 Admin authentication with NextAuth
-- 🏗️ LocalStack for local AWS services
-- ☁️ Serverless deployment with AWS Lambda
-- 🌐 API Gateway for RESTful endpoints
-- 📱 Responsive design with Tailwind CSS
-- 🚀 TypeScript throughout
-- 🐳 Docker containerization
-
-## Production Deployment
-
-### Lambda & AWS Infrastructure
-
-This project can be deployed to AWS using Lambda functions and API Gateway for a serverless architecture.
-
-#### Prerequisites for Production Deployment
-
-- AWS CLI configured with appropriate credentials
-- Terraform installed
-- Node.js 18+ for building Lambda functions
-
-#### Step 1: Configure Terraform Variables
-
-```bash
-# Copy the example file
-cp terraform/terraform.tfvars.example terraform/terraform.tfvars
-
-# Edit the file and set your values
-# Required: nextauth_secret (make it long and random)
-```
-
-Example `terraform/terraform.tfvars`:
-
-```bash
-nextauth_secret = "your-very-long-random-secret-key-here-at-least-32-characters"
-```
-
-#### Step 2: Build Lambda Functions
-
-```bash
-# Build and package all Lambda functions
-npm run lambda:build
-```
-
-This creates deployment packages:
-
-- `terraform/wines-api.zip` - Wine catalog API
-- `terraform/admin-api.zip` - Admin user management
-- `terraform/auth-api.zip` - Authentication API
-
-#### Step 3: Deploy Infrastructure
-
-```bash
-# Initialize Terraform (first time only)
-npm run tf:init
-
-# Review deployment plan
-npm run tf:plan
-
-# Deploy to AWS
-npm run tf:apply
-```
-
-#### Step 4: Configure Domain DNS
-
-After deployment, you'll get Route 53 name servers in the output. Configure your domain registrar to use these name servers:
-
-```bash
-# The terraform apply output will show:
-route53_name_servers = [
-  "ns-1234.awsdns-12.com",
-  "ns-5678.awsdns-34.net",
-  "ns-9012.awsdns-56.org", 
-  "ns-3456.awsdns-78.co.uk"
-]
-```
-
-**Configure your domain registrar** (where you bought `chrisubick.io`) to use these name servers for the subdomain `valleyoakwinery.chrisubick.io`.
-
-#### Step 5: Deploy Website Content
-
-```bash
-# Build the Next.js application for production
-npm run build
-
-# Deploy static files to S3 (you'll need to sync the .next/export to S3)
-# This step will be automated in future versions
-```
-
-#### Step 6: One-Command Deploy (after initial setup)
-
-```bash
-# Build Lambda functions and deploy in one command
-npm run lambda:deploy
-```
-
-#### Infrastructure Created
-
-- **3 Lambda Functions** for API endpoints
-- **API Gateway** with RESTful routing
-- **DynamoDB Tables** for wines and users
-- **S3 Buckets** for wine images and website hosting
-- **CloudFront Distribution** with custom domain and HTTPS
-- **Route 53 Hosted Zone** for DNS management
-- **ACM Certificate** for HTTPS encryption
-- **IAM Roles** with proper permissions
-- **CloudWatch Logs** for monitoring
-
-#### Deployment URLs
-
-After successful deployment, your application will be available at:
-
-- **Website**: <https://valleyoakwinery.chrisubick.io>
-- **API Gateway**: `https://{api-id}.execute-api.us-west-2.amazonaws.com/prod/`
-- **CloudFront**: `https://{distribution-id}.cloudfront.net`
-
-#### API Endpoints
-
-Your API will be available at: `https://valleyoakwinery.chrisubick.io/api/`
-
-- `GET /api/wines` - List all wines
-- `POST /api/wines` - Create new wine (requires admin auth)
-- `GET /api/wines/{id}` - Get specific wine
-- `PUT /api/wines/{id}` - Update wine (requires admin auth)
-- `DELETE /api/wines/{id}` - Delete wine (requires admin auth)
-- `POST /api/admin` - Create admin user
-
-#### Cleanup
-
-To destroy all AWS resources:
-
-```bash
-cd terraform
-terraform destroy
-```
-
-### Legacy Deployment Options
-
-For production deployment with traditional infrastructure, update your `.env.local` with real AWS credentials and deploy using:
-
-```bash
-npm run tf:init
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars   # first time: fill in secrets
 npm run tf:plan
 npm run tf:apply
 ```
 
-## 🔧 Development Notes
+### Admin users in production
 
-### Build Artifacts
+```bash
+npm run create-admin -- you@example.com 'password' --prod   # uses your AWS CLI credentials
+```
 
-The following files are generated during the build process and are **not tracked in git**:
+Once logged in, an admin can create other users via `POST /api/admin`.
 
-- **Lambda zip files** (`terraform/*.zip`) - Created by `npm run lambda:build`
-- **Terraform state** (`terraform/terraform.tfstate*`) - Managed by Terraform
-- **Terraform providers** (`terraform/.terraform/`) - Downloaded during `terraform init`
-- **Environment variables** (`terraform/terraform.tfvars`) - Contains secrets
+## Scripts
 
-These files are regenerated automatically during deployment and should never be committed to version control.
-
----
-
-## 🚀 Deployment
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it does |
+| --- | --- |
+| `npm run dev:local` | LocalStack + table setup + dev server |
+| `npm run dev` | Dev server only (LocalStack must already be running) |
+| `npm run create-admin -- <email> <pw> [--prod]` | Create or reset an admin user |
+| `npm run build` / `npm start` | Production build / serve it locally |
+| `npm run tf:plan` / `npm run tf:apply` | Preview / apply infrastructure changes |

@@ -1,17 +1,19 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  endpoint: process.env.NODE_ENV === 'development' ? 'http://localhost:4566' : undefined,
-  credentials: process.env.NODE_ENV === 'development' ? {
-    accessKeyId: 'test',
-    secretAccessKey: 'test',
-  } : {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+// Local dev talks to LocalStack (docker-compose.yml). In production (Amplify) the
+// SDK's default credential chain picks up the app's IAM compute role.
+export const isLocal = process.env.NODE_ENV === 'development';
+
+export const awsConfig = isLocal
+  ? {
+      region: 'us-east-1',
+      endpoint: 'http://localhost:4566',
+      credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+    }
+  : { region: process.env.AWS_REGION || 'us-west-2' };
+
+const client = new DynamoDBClient(awsConfig);
 
 export const dynamodb = DynamoDBDocumentClient.from(client);
 

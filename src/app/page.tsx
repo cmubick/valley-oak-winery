@@ -1,17 +1,13 @@
-import { Wine } from '@/lib/dynamodb';
+import { Wine, dynamodb } from '@/lib/dynamodb';
+import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import WineCard from '@/components/WineCard';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic'; // always read fresh wines
+
 async function getWines(): Promise<Wine[]> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/wines`, {
-    cache: 'no-store' // Ensure fresh data for SSR
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch wines');
-  }
-  
-  return res.json();
+  const result = await dynamodb.send(new ScanCommand({ TableName: process.env.DYNAMODB_WINES_TABLE }));
+  return (result.Items ?? []) as Wine[];
 }
 
 export default async function HomePage() {
