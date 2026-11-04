@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Wine, WineInput } from '@/lib/wines';
 import WineForm from '@/components/WineForm';
 import AdminWineList from '@/components/AdminWineList';
+import InstagramStatusCard from '@/components/InstagramStatusCard';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -109,7 +110,9 @@ export default function AdminDashboard() {
             }}
           />
         )}
-        
+
+        <InstagramStatusCard />
+
         <AdminWineList
           wines={wines}
           onEdit={(wine) => {

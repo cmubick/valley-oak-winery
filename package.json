@@ -13,6 +13,7 @@
     "localstack:setup": "node scripts/setup-localstack.mjs",
     "create-admin": "node scripts/create-admin.mjs",
     "seed-wines": "node scripts/seed-wines.mjs",
+    "instagram-token": "node scripts/instagram-token.mjs",
     "tf:init": "cd terraform && terraform init",
     "tf:plan": "cd terraform && terraform plan",
     "tf:apply": "cd terraform && terraform apply"

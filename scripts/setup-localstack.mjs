@@ -21,7 +21,7 @@ for (let i = 0; ; i++) {
 }
 console.log();
 
-for (const [TableName, key] of [['winery-wines', 'id'], ['winery-users', 'email']]) {
+for (const [TableName, key] of [['winery-wines', 'id'], ['winery-users', 'email'], ['winery-settings', 'id']]) {
   try {
     await ddb.send(new DescribeTableCommand({ TableName }));
     console.log(`Table ${TableName} exists`);

@@ -1,9 +1,10 @@
 # terraform/main.tf
 #
 # Valley Oak Winery on AWS:
-#   - DynamoDB tables (wines, users) and an S3 bucket for wine photos
+#   - DynamoDB tables (wines, users, settings) and an S3 bucket for wine photos
 #   - Amplify Hosting app that builds the Next.js app from GitHub on every push to main
 #     and serves it (SSR + API routes) at https://valleyoakwinery.chrisubick.io
+#   - A weekly EventBridge job that keeps the Instagram access token renewed
 
 terraform {
   required_providers {
@@ -26,7 +27,7 @@ variable "nextauth_secret" {
 }
 
 variable "github_token" {
-  description = "GitHub personal access token Amplify uses to read the repo and add its webhook"
+  description = "GitHub personal access token Amplify uses to read the repo and add its webhook. Only used when the Amplify app is first created; it may expire afterwards."
   type        = string
   sensitive   = true
 }
@@ -78,6 +79,20 @@ resource "aws_dynamodb_table" "users" {
   }
 
   tags = { Name = "Winery Users" }
+}
+
+# Small key/value settings, e.g. the Instagram access token (id = "instagram").
+resource "aws_dynamodb_table" "settings" {
+  name         = "winery-settings"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  tags = { Name = "Winery Settings" }
 }
 
 # Wine photos. The admin UI uploads via presigned PUT; objects under wines/ are public-read.
@@ -150,7 +165,7 @@ resource "aws_iam_role_policy" "amplify_compute" {
       {
         Effect   = "Allow"
         Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Scan", "dynamodb:Query"]
-        Resource = [aws_dynamodb_table.wines.arn, aws_dynamodb_table.users.arn]
+        Resource = [aws_dynamodb_table.wines.arn, aws_dynamodb_table.users.arn, aws_dynamodb_table.settings.arn]
       },
       {
         Effect   = "Allow"
@@ -181,7 +196,7 @@ resource "aws_amplify_app" "winery" {
             - npm ci
         build:
           commands:
-            - env | grep -E '^(DYNAMODB_|S3_BUCKET_NAME|NEXTAUTH_)' >> .env.production
+            - env | grep -E '^(DYNAMODB_|S3_BUCKET_NAME|NEXTAUTH_|INSTAGRAM_)' >> .env.production
             - npm run build
       artifacts:
         baseDirectory: .next
@@ -194,11 +209,20 @@ resource "aws_amplify_app" "winery" {
   YAML
 
   environment_variables = {
-    DYNAMODB_WINES_TABLE = aws_dynamodb_table.wines.name
-    DYNAMODB_USERS_TABLE = aws_dynamodb_table.users.name
-    S3_BUCKET_NAME       = aws_s3_bucket.wine_images.bucket
-    NEXTAUTH_URL         = local.site_url
-    NEXTAUTH_SECRET      = var.nextauth_secret
+    DYNAMODB_WINES_TABLE     = aws_dynamodb_table.wines.name
+    DYNAMODB_USERS_TABLE     = aws_dynamodb_table.users.name
+    DYNAMODB_SETTINGS_TABLE  = aws_dynamodb_table.settings.name
+    S3_BUCKET_NAME           = aws_s3_bucket.wine_images.bucket
+    NEXTAUTH_URL             = local.site_url
+    NEXTAUTH_SECRET          = var.nextauth_secret
+    INSTAGRAM_REFRESH_SECRET = random_password.instagram_refresh.result
+  }
+
+  # The GitHub token is only needed to connect the repo when the app is created (Amplify
+  # then builds via its own webhook + deploy key). AWS never returns it, so without this
+  # Terraform re-sends it on every update, and an expired token fails the whole apply.
+  lifecycle {
+    ignore_changes = [access_token]
   }
 }
 
@@ -221,6 +245,75 @@ resource "aws_amplify_domain_association" "winery" {
     branch_name = aws_amplify_branch.main.branch_name
     prefix      = var.subdomain
   }
+}
+
+# ---------------------------------------------------------------------------
+# Instagram token renewal
+#
+# The Pictures page reads posts with a long-lived Instagram token that expires after
+# 60 days unless refreshed. Once a week EventBridge POSTs /api/instagram/refresh with a
+# shared secret header, and the app renews the token (src/lib/instagram.ts).
+
+resource "random_password" "instagram_refresh" {
+  length  = 40
+  special = false
+}
+
+resource "aws_cloudwatch_event_connection" "site" {
+  name               = "winery-site"
+  authorization_type = "API_KEY"
+
+  auth_parameters {
+    api_key {
+      key   = "x-refresh-secret"
+      value = random_password.instagram_refresh.result
+    }
+  }
+}
+
+resource "aws_cloudwatch_event_api_destination" "instagram_refresh" {
+  name                             = "winery-instagram-refresh"
+  invocation_endpoint              = "${local.site_url}/api/instagram/refresh"
+  http_method                      = "POST"
+  invocation_rate_limit_per_second = 1
+  connection_arn                   = aws_cloudwatch_event_connection.site.arn
+}
+
+resource "aws_cloudwatch_event_rule" "instagram_refresh" {
+  name                = "winery-instagram-refresh"
+  description         = "Weekly renewal of the Instagram access token"
+  schedule_expression = "rate(7 days)"
+}
+
+resource "aws_iam_role" "events_invoke_site" {
+  name = "winery-events-invoke-site"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "events_invoke_site" {
+  name = "invoke-instagram-refresh"
+  role = aws_iam_role.events_invoke_site.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "events:InvokeApiDestination"
+      Resource = aws_cloudwatch_event_api_destination.instagram_refresh.arn
+    }]
+  })
+}
+
+resource "aws_cloudwatch_event_target" "instagram_refresh" {
+  rule     = aws_cloudwatch_event_rule.instagram_refresh.name
+  arn      = aws_cloudwatch_event_api_destination.instagram_refresh.arn
+  role_arn = aws_iam_role.events_invoke_site.arn
 }
 
 # ---------------------------------------------------------------------------
