@@ -20,11 +20,18 @@ async function getWines(): Promise<Wine[]> {
 
 function WineRow({ wine }: { wine: Wine }) {
   return (
-    <div className="flex gap-4 px-4 pb-10 pt-4">
+    // Phones: label image centered above the wine. Wider screens: image beside it, level with the text.
+    <div className="flex flex-col items-center gap-4 px-4 pb-10 pt-4 sm:flex-row">
       {wine.imageUrl && (
-        <Image src={wine.imageUrl} alt={wineTitle(wine)} width={48} height={144} className="h-36 w-12 shrink-0 object-contain" />
+        <Image
+          src={wine.imageUrl}
+          alt={wineTitle(wine)}
+          width={192}
+          height={192}
+          className="h-auto max-h-96 w-48 shrink-0 object-contain sm:max-h-48 sm:w-24"
+        />
       )}
-      <div className="flex-1">
+      <div className="w-full flex-1">
         <div className="flex justify-between gap-4 font-semibold">
           <div className="text-left">{wineTitle(wine)}</div>
           <div>{wine.award}</div>
