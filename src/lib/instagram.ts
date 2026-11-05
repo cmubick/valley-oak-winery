@@ -2,21 +2,28 @@ import { unstable_cache } from 'next/cache';
 import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { dynamodb } from './dynamodb';
 
-// Latest posts from the winery's Instagram (Business/Creator account) via the
-// "Instagram API with Instagram Login". The long-lived access token lives in the
-// settings table and is renewed here: tokens last 60 days, can be refreshed once
-// they're 24h old, and a refresh resets them to 60 days.
+// Latest posts from the winery's Instagram Business account, for the Pictures page.
 //
-// Refreshes happen (a) weekly via the EventBridge job in terraform/main.tf, which
-// POSTs /api/instagram/refresh, and (b) opportunistically whenever posts are fetched.
-// Set the initial token with `npm run instagram-token`.
+// The access token lives in the settings table (id = "instagram"), saved by
+// `npm run instagram-connect`. Two kinds of token are supported, depending on how Meta
+// issued it (newer Meta apps can only get the second kind):
+//
+//   api: "instagram"  Instagram API with Instagram Login. Read via graph.instagram.com/me/media.
+//                     Expires after 60 days unless refreshed; refreshed here once it's a week
+//                     old, and weekly by the EventBridge job (terraform/main.tf).
+//   api: "facebook"   System-user token from Meta's "Unified login" (Facebook Login for
+//                     Business). Read via graph.facebook.com/{igUserId}/media. Never expires,
+//                     so no refresh.
 
 const TABLE = process.env.DYNAMODB_SETTINGS_TABLE || 'winery-settings';
 const KEY = { id: 'instagram' };
-const API = process.env.INSTAGRAM_API_BASE || 'https://graph.instagram.com'; // override only for local testing
+// Overrides exist only for local testing against a mock server.
+const INSTAGRAM_API = process.env.INSTAGRAM_API_BASE || 'https://graph.instagram.com';
+const FACEBOOK_API = process.env.FACEBOOK_API_BASE || 'https://graph.facebook.com';
 const DAY = 24 * 60 * 60 * 1000;
 const OPPORTUNISTIC_REFRESH_AGE = 7 * DAY;
 const MIN_REFRESH_AGE = DAY; // Instagram rejects refreshes of tokens younger than 24h
+const MEDIA_FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
 
 export interface InstagramPost {
   id: string;
@@ -28,22 +35,28 @@ export interface InstagramPost {
 
 interface TokenRecord {
   id: 'instagram';
+  api?: 'instagram' | 'facebook'; // missing = "instagram" (records saved before this field existed)
   accessToken: string;
+  igUserId?: string; // required for api "facebook" and when byId is set
+  byId?: boolean; // read /{igUserId}/media instead of /me/media (tokens from Unified login)
   username?: string;
   refreshedAt: string;
-  expiresAt?: string;
+  expiresAt?: string; // missing for tokens that never expire
   lastError?: string;
   lastErrorAt?: string;
 }
 
 export interface InstagramStatus {
   connected: boolean;
+  api?: 'instagram' | 'facebook';
   username?: string;
   refreshedAt?: string;
   expiresAt?: string;
   lastError?: string;
   lastErrorAt?: string;
 }
+
+const apiOf = (record: TokenRecord) => record.api ?? 'instagram';
 
 async function loadToken(): Promise<TokenRecord | null> {
   const { Item } = await dynamodb.send(new GetCommand({ TableName: TABLE, Key: KEY }));
@@ -65,9 +78,8 @@ async function recordError(message: string) {
   }
 }
 
-async function instagramGet(path: string, params: Record<string, string>) {
-  const url = `${API}${path}?${new URLSearchParams(params)}`;
-  const res = await fetch(url, { cache: 'no-store' });
+async function graphGet(base: string, path: string, params: Record<string, string>) {
+  const res = await fetch(`${base}${path}?${new URLSearchParams(params)}`, { cache: 'no-store' });
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body.error) {
     // Never include the URL in errors: it carries the access token.
@@ -76,21 +88,22 @@ async function instagramGet(path: string, params: Record<string, string>) {
   return body;
 }
 
-// Refresh the token if it's at least `minAge` old. Returns the (possibly new) record.
+// Refresh an Instagram-API token if it's at least `minAge` old. Returns the (possibly new) record.
 async function refreshIfOlderThan(record: TokenRecord, minAge: number): Promise<TokenRecord> {
+  // Only tokens from the older Instagram-login setup expire; Unified-login (system-user) tokens don't.
+  if (apiOf(record) !== 'instagram' || record.byId) return record;
   const age = Date.now() - new Date(record.refreshedAt).getTime();
   if (age < Math.max(minAge, MIN_REFRESH_AGE)) return record;
 
   try {
-    const body = await instagramGet('/refresh_access_token', {
+    const body = await graphGet(INSTAGRAM_API, '/refresh_access_token', {
       grant_type: 'ig_refresh_token',
       access_token: record.accessToken,
     });
     const now = Date.now();
     const updated: TokenRecord = {
-      id: 'instagram',
+      ...record,
       accessToken: body.access_token,
-      username: record.username,
       refreshedAt: new Date(now).toISOString(),
       expiresAt: body.expires_in ? new Date(now + body.expires_in * 1000).toISOString() : undefined,
     };
@@ -112,17 +125,16 @@ export async function refreshInstagramToken(): Promise<InstagramStatus> {
 
 async function fetchLatestPosts(limit: number): Promise<InstagramPost[]> {
   let record = await loadToken();
-  if (!record) throw new Error('Instagram is not connected (run `npm run instagram-token`)');
+  if (!record) throw new Error('Instagram is not connected (run `npm run instagram-connect`)');
   record = await refreshIfOlderThan(record, OPPORTUNISTIC_REFRESH_AGE);
 
+  // Ask for extra in case some posts have no displayable image (e.g. copyrighted audio).
+  const params = { fields: MEDIA_FIELDS, limit: String(limit + 6), access_token: record.accessToken };
   let body;
   try {
-    body = await instagramGet('/me/media', {
-      fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp',
-      // Ask for extra in case some posts have no displayable image (e.g. copyrighted audio).
-      limit: String(limit + 6),
-      access_token: record.accessToken,
-    });
+    const base = apiOf(record) === 'facebook' ? FACEBOOK_API : INSTAGRAM_API;
+    const path = apiOf(record) === 'facebook' || record.byId ? `/${record.igUserId}/media` : '/me/media';
+    body = await graphGet(base, path, params);
   } catch (error) {
     await recordError(`Fetching posts failed: ${(error as Error).message}`);
     throw error;
@@ -162,7 +174,7 @@ export async function getLatestPosts(limit = 9): Promise<InstagramPost[] | null>
 function statusOf(record: TokenRecord | null): InstagramStatus {
   if (!record) return { connected: false };
   const { username, refreshedAt, expiresAt, lastError, lastErrorAt } = record;
-  return { connected: true, username, refreshedAt, expiresAt, lastError, lastErrorAt };
+  return { connected: true, api: record.byId ? 'facebook' : apiOf(record), username, refreshedAt, expiresAt, lastError, lastErrorAt };
 }
 
 export async function getInstagramStatus(): Promise<InstagramStatus> {

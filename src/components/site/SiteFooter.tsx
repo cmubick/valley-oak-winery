@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import MailingList from './MailingList';
 
 const button = 'inline-block rounded px-4 font-material text-sm font-medium leading-9 hover:bg-black/[.04]';
@@ -51,6 +52,9 @@ export default function SiteFooter() {
         <div className="mx-8 my-1.5 text-left text-[80%]">
           <div>All rights reserved</div>
           <div>Valley Oak Winery, LLC &copy;</div>
+          <Link className="underline" href="/privacy">
+            Privacy Policy
+          </Link>
         </div>
         <div className="my-1.5 mr-8 flex justify-end gap-16">
           <a className={button} href="https://instagram.com/valleyoakwinery" target="_blank" rel="noopener noreferrer">

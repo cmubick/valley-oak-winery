@@ -26,7 +26,7 @@ export default function InstagramStatusCard() {
     return (
       <Card tone="amber" title="Instagram feed: not connected">
         The Pictures page is showing fallback photos. Connect the account with{' '}
-        <code className="bg-gray-100 px-1 rounded">npm run instagram-token -- --prod</code> (see README).
+        <code className="bg-gray-100 px-1 rounded">npm run instagram-connect -- --prod</code> (see README).
       </Card>
     );
   }
@@ -36,8 +36,14 @@ export default function InstagramStatusCard() {
 
   return (
     <Card tone={tone} title={`Instagram feed: connected${status.username ? ` as @${status.username}` : ''}`}>
-      Token renews automatically. Last renewed {fmt(status.refreshedAt)}
-      {status.expiresAt && <>, expires {fmt(status.expiresAt)}</>}.
+      {status.api === 'facebook' && !status.expiresAt ? (
+        <>Connected {fmt(status.refreshedAt)}. The token doesn&apos;t expire.</>
+      ) : (
+        <>
+          Token renews automatically. Last renewed {fmt(status.refreshedAt)}
+          {status.expiresAt && <>, expires {fmt(status.expiresAt)}</>}.
+        </>
+      )}
       {status.lastError && (
         <div className="mt-1 text-red-700">
           Last error ({fmt(status.lastErrorAt)}): {status.lastError}
