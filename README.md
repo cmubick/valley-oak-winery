@@ -2,7 +2,7 @@
 
 Website for Valley Oak Winery: a public wine catalog plus an admin area for managing wines and photos.
 
-**Live:** <https://valleyoakwinery.chrisubick.io>
+**Live:** <https://www.valleyoakwinery.com> (the old test address <https://valleyoakwinery.chrisubick.io> redirects there)
 
 ## How it fits together
 

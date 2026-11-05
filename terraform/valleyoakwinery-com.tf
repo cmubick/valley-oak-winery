@@ -8,7 +8,8 @@
 #   still point the website and email at iPage.
 # Stage 2 (Network Solutions, by hand): switch the domain's nameservers to the four
 #   `prod_nameservers` output below. Still no visible change; the certificate validates.
-# Stage 3 (cutover, later): point valleyoakwinery.com and www at the Amplify app.
+# Stage 3 (cutover, Nov 4, 2026): valleyoakwinery.com and www point at the Amplify app;
+#   valleyoakwinery.com redirects to www (next.config.ts).
 #
 # Email (info@valleyoakwinery.com) stays on iPage's mail servers throughout. Don't cancel
 # the iPage / Network Solutions hosting plan until email has been moved somewhere else.
@@ -27,14 +28,13 @@ resource "aws_route53_zone" "prod" {
 # ---------------------------------------------------------------------------
 # Copies of the iPage records, as served by ns1.ipage.com on Nov 4, 2026
 
-# The old site. Removed at cutover.
-resource "aws_route53_record" "ipage_site" {
-  for_each = toset([local.prod_domain, "www.${local.prod_domain}"])
-  zone_id  = aws_route53_zone.prod.zone_id
-  name     = each.key
-  type     = "A"
-  ttl      = local.dns_ttl
-  records  = [local.ipage_web]
+# The old site's record for valleyoakwinery.com. At cutover Amplify replaced it with a record
+# pointing at the new site, so Terraform stops managing it (without deleting it).
+removed {
+  from = aws_route53_record.ipage_site
+  lifecycle {
+    destroy = false
+  }
 }
 
 # iPage answers every other name (mail., smtp., imap., ftp., cpanel., …) with the web host.
@@ -143,6 +143,31 @@ resource "aws_route53_record" "prod_cert_validation" {
   ttl             = 300
   records         = [each.value.resource_record_value]
   allow_overwrite = true
+}
+
+# ---------------------------------------------------------------------------
+# The new site (stage 3). Because the zone is in this account, Amplify writes the
+# valleyoakwinery.com and www records itself, pointing them at the app.
+
+resource "aws_amplify_domain_association" "prod" {
+  app_id                = aws_amplify_app.winery.id
+  domain_name           = local.prod_domain
+  wait_for_verification = false
+
+  certificate_settings {
+    type                   = "CUSTOM"
+    custom_certificate_arn = aws_acm_certificate.prod.arn
+  }
+
+  sub_domain {
+    branch_name = aws_amplify_branch.main.branch_name
+    prefix      = ""
+  }
+
+  sub_domain {
+    branch_name = aws_amplify_branch.main.branch_name
+    prefix      = "www"
+  }
 }
 
 # ---------------------------------------------------------------------------

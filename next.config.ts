@@ -9,9 +9,24 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
-  // "/" is Our Story now (as on the original site); keep the old URL working.
   async redirects() {
-    return [{ source: '/our-story', destination: '/', permanent: true }];
+    return [
+      // The site lives at www; send the bare domain and the old test address there.
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'valleyoakwinery.com' }],
+        destination: 'https://www.valleyoakwinery.com/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'valleyoakwinery.chrisubick.io' }],
+        destination: 'https://www.valleyoakwinery.com/:path*',
+        permanent: false,
+      },
+      // "/" is Our Story now (as on the original site); keep the old URL working.
+      { source: '/our-story', destination: '/', permanent: true },
+    ];
   },
 };
 

@@ -3,7 +3,8 @@
 # Valley Oak Winery on AWS:
 #   - DynamoDB tables (wines, users, settings) and an S3 bucket for wine photos
 #   - Amplify Hosting app that builds the Next.js app from GitHub on every push to main
-#     and serves it (SSR + API routes) at https://valleyoakwinery.chrisubick.io
+#     and serves it (SSR + API routes) at https://www.valleyoakwinery.com
+#     (DNS and the domain's certificate are in valleyoakwinery-com.tf)
 #   - A weekly EventBridge job that keeps the Instagram access token renewed
 
 terraform {
@@ -49,7 +50,10 @@ variable "subdomain" {
 }
 
 locals {
-  site_url = "https://${var.subdomain}.${var.root_domain}"
+  # The public address (valleyoakwinery.com redirects here; see valleyoakwinery-com.tf).
+  site_url = "https://www.valleyoakwinery.com"
+  # The original test address, which now redirects to site_url (next.config.ts).
+  test_url = "https://${var.subdomain}.${var.root_domain}"
 }
 
 # ---------------------------------------------------------------------------
@@ -134,7 +138,7 @@ resource "aws_s3_bucket_cors_configuration" "wine_images" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "HEAD"]
-    allowed_origins = [local.site_url, "http://localhost:3000"]
+    allowed_origins = [local.site_url, "https://valleyoakwinery.com", local.test_url, "http://localhost:3000"]
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }
