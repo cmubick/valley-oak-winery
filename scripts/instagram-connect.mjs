@@ -117,7 +117,36 @@ if (!record) {
 
   if (await askAppCredentials({ optional: true })) {
     try {
-      const { data } = await get(FB, '/debug_token', { input_token: token, access_token: `${appId}|${appSecret}` });
+      let { data } = await get(FB, '/debug_token', { input_token: token, access_token: `${appId}|${appSecret}` });
+      if (data.type === 'USER') {
+        // A personal token (e.g. from the Graph API Explorer) expires within hours. Swap it for a
+        // long-lived one, then for the winery Page's token, which never expires, and read
+        // Instagram through the Page.
+        const long = await get(FB, '/oauth/access_token', {
+          grant_type: 'fb_exchange_token',
+          client_id: appId,
+          client_secret: appSecret,
+          fb_exchange_token: token,
+        });
+        ok('Exchanged your personal token for a long-lived one');
+        const pages = await get(FB, '/me/accounts', { fields: 'name,access_token,instagram_business_account{id,username}', access_token: long.access_token });
+        for (const p of pages.data ?? []) info(`Page "${p.name}": ${p.instagram_business_account ? `Instagram @${p.instagram_business_account.username}` : 'no linked Instagram account'}`);
+        const linked = (pages.data ?? []).filter((p) => p.instagram_business_account);
+        if (!linked.length) fail('None of your Facebook Pages has a linked Instagram account. Link @valleyoakwinery to the winery Page (Page settings → Linked accounts → Instagram) and try again.');
+        // Your login may manage several businesses' Pages: use the winery's, or ask.
+        let page = linked.find((p) => p.instagram_business_account.username?.toLowerCase() === 'valleyoakwinery');
+        if (!page) {
+          console.log('\n@valleyoakwinery is not linked to any of your Pages. Pages with Instagram:');
+          linked.forEach((p, i) => console.log(`  ${i + 1}. ${p.name} → @${p.instagram_business_account.username}`));
+          const pick = Number(await ask('Number of the one to use, or press Enter to stop: '));
+          page = linked[pick - 1];
+          if (!page) fail('No account chosen.');
+        }
+        token = page.access_token;
+        candidates.add(page.instagram_business_account.id);
+        ok(`Using the "${page.name}" Page token`);
+        ({ data } = await get(FB, '/debug_token', { input_token: token, access_token: `${appId}|${appSecret}` }));
+      }
       info(`Token type: ${data.type ?? 'unknown'}; expires: ${data.expires_at ? new Date(data.expires_at * 1000).toISOString() : 'never'}`);
       info(`Permissions: ${(data.scopes ?? []).join(', ') || 'none listed'}`);
       for (const s of data.granular_scopes ?? []) {

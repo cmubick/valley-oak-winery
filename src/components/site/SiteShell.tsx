@@ -6,9 +6,10 @@ import FacebookFeed from './FacebookFeed';
 // vineyard background photo, matching the original Angular layout.
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[url(/images/Belmont-026.jpg)] bg-cover bg-fixed bg-center bg-no-repeat text-center font-serif leading-[normal] text-black">
+    // flex-col + flex-1 on the content row keeps the footer at the bottom of the window on short pages.
+    <div className="flex min-h-screen flex-col bg-[url(/images/Belmont-026.jpg)] bg-cover bg-fixed bg-center bg-no-repeat text-center font-serif leading-[normal] text-black">
       <SiteHeader />
-      <div className="flex flex-col min-[960px]:flex-row">
+      <div className="flex flex-1 flex-col min-[960px]:flex-row">
         <main className="min-w-0 min-[960px]:flex-1">{children}</main>
         <aside className="flex justify-center px-4 min-[960px]:w-[464px] min-[960px]:shrink-0 min-[960px]:pl-8 min-[960px]:pr-8">
           <FacebookFeed />
